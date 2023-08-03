@@ -53,7 +53,7 @@ cover/
 chroma_db/
 output_links.json
 summary_output.json
-
+test.py
 # Translations
 *.mo
 *.pot
