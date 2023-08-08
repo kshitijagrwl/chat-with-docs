@@ -1,15 +1,15 @@
-import newspaper
 import requests
 import json
-from newspaper import fulltext
 from aiohttp import ClientSession
 import asyncio
 import aiohttp
-from newspaper import Article
+from bs4 import BeautifulSoup
 from langchain.document_loaders.json_loader import JSONLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
+from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import SentenceTransformerEmbeddings
+from langchain.chains.question_answering import load_qa_chain
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
 from twisted.internet import reactor
@@ -64,12 +64,15 @@ async def _fetch_article_summary(session, url):
     Returns:
         tuple: A tuple containing the article's title and full text.
     """
-    article = Article(url)
-    article.download()
-    article.parse()
-    html = await session.get(url)
-    text = fulltext(await html.text())
-    return article.title, text
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            html = await response.text()
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Find all the text on the page
+    text = soup.get_text()
+    return text
 
 async def _process_links(links):
     """
@@ -111,7 +114,7 @@ def get_full_text(path='output_links.json'):
         links = crawled_data[url]
         # Process links asynchronously
         results = asyncio.run(_process_links(links))
-        for title, text in results:
+        for text in results:
             summary_data.append({'text': text})
     summary_data_final['chatwithdocs'] = tuple(summary_data)
 
@@ -163,20 +166,28 @@ def init_database(docs, model_name = "all-MiniLM-L6-v2"):
         Chroma: The initialized text database.
     """    
     embeddings = SentenceTransformerEmbeddings(model_name = model_name)
-    Chroma.from_documents(docs, embeddings, persist_directory="./chroma_db")
+    Chroma.from_documents(docs, embeddings, persist_directory="./chroma_db", collection_metadata={"hnsw:space": "cosine"})
     
-def search(query, embeddings = SentenceTransformerEmbeddings(model_name = "all-MiniLM-L6-v2")):
+def search_similarity(query,openai_api_key="your openai api key", embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"), openai_model="gpt-3.5-turbo"):
     """
     Perform a similarity search on the text database using the given query.
 
     Parameters:
         query (str): The query for the similarity search.
-        database (Chroma): The text database for searching.
+        embeddings (SentenceTransformerEmbeddings): An instance of SentenceTransformerEmbeddings
+            with the desired model for generating text embeddings.
+        openai_api_key (str): Your OpenAI API key for using the OpenAI language model.
+        openai_model (str): The name of the OpenAI language model to use.
 
     Returns:
         str: The search result as an answer.
     """
+    
     database = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
     query = query.lower()
-    answer = database.similarity_search_with_score(query)
+    matching_docs = database.similarity_search(query)
+    model_name = openai_model
+    llm = ChatOpenAI(model_name=model_name,openai_api_key = openai_api_key)
+    chain = load_qa_chain(llm, chain_type="stuff",verbose=True)
+    answer =  chain.run(input_documents=matching_docs, question=query)
     return answer

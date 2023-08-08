@@ -21,14 +21,14 @@ WORKDIR /app
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 ARG UID=10001
-RUN apt-get update && apt-get install \
-  -y --no-install-recommends python3-virtualenv
+RUN apt-get update && apt-get install 
 
 SHELL ["/bin/bash", "-c"]
 
 # Copy the source code into the container.
 COPY . .
 
+RUN apt install sqlite3
 RUN pip install -r requirements.txt
 
 # Expose the port that the application listens on.
