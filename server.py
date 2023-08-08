@@ -36,11 +36,8 @@ def get_text(path: Optional[str] = "output_links.json"):
 @app.get("/initializeDB")
 def initialize_db():
     data = data_loader()
-    print("data loaded")
     docs = split_docs(data)
-    print("docs split")
     database = init_database(docs)
-    print("database initialized")
     return {"status": "Database initialized successfully!", "database": database}
 
 @app.get("/search")
