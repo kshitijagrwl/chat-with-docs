@@ -95,7 +95,7 @@ async def _process_links(links):
 
         return await asyncio.gather(*tasks)
 
-def get_full_text(path='output_links.json'):
+def get_full_text(path='./files/output_links.json'):
     """
     Process each link, generate summaries, and create a new JSON file.
 
@@ -119,7 +119,7 @@ def get_full_text(path='output_links.json'):
     summary_data_final['chatwithdocs'] = tuple(summary_data)
 
     # Save the summary data to a new JSON file
-    with open('summary_output.json', 'w') as json_file:
+    with open('./files/summary_output.json', 'w') as json_file:
         json.dump(summary_data_final, json_file, indent=4)
 
 def split_docs(documents,chunk_size=500,chunk_overlap=20):
@@ -139,7 +139,7 @@ def split_docs(documents,chunk_size=500,chunk_overlap=20):
     docs = text_splitter.split_documents(documents)
     return docs
 
-def data_loader(path = 'summary_output.json',jq_schema = '.chatwithdocs[].text'):
+def data_loader(path = './files/summary_output.json',jq_schema = '.chatwithdocs[].text'):
     """
     Load text data from a JSON file using a JSON Loader.
 
@@ -166,7 +166,7 @@ def init_database(docs, model_name = "all-MiniLM-L6-v2"):
         Chroma: The initialized text database.
     """    
     embeddings = SentenceTransformerEmbeddings(model_name = model_name)
-    Chroma.from_documents(docs, embeddings, persist_directory="./chroma_db", collection_metadata={"hnsw:space": "cosine"})
+    Chroma.from_documents(docs, embeddings, persist_directory="./files/chroma_db", collection_metadata={"hnsw:space": "cosine"})
     
 def search_similarity(query,openai_api_key="your openai api key", embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"), openai_model="gpt-3.5-turbo"):
     """
@@ -183,7 +183,7 @@ def search_similarity(query,openai_api_key="your openai api key", embeddings = S
         str: The search result as an answer.
     """
     
-    database = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+    database = Chroma(persist_directory="./files/chroma_db", embedding_function=embeddings)
     query = query.lower()
     matching_docs = database.similarity_search(query)
     model_name = openai_model

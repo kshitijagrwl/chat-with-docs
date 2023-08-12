@@ -35,5 +35,5 @@ class DocSpider(scrapy.Spider):
                 yield scrapy.Request(next_link, callback=self.parse, meta={'depth': depth + 1})
 
     def save_to_json(self, data):
-      with open('output_links.json', 'w') as json_file:  # Use 'w' mode to overwrite the file
+      with open('./files/output_links.json', 'w') as json_file:  # Use 'w' mode to overwrite the file
         json.dump(data, json_file, indent=4)
