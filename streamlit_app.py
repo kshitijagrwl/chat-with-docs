@@ -1,8 +1,12 @@
+import multiprocessing
+import requests
+from scrapy import cmdline
 import streamlit as st
 from twisted.internet import reactor
 import json
+from scrapy import cmdline
 from docCrawler.docCrawler.spiders.spider import DocSpider
-from scrapy.crawler import CrawlerRunner
+from scrapy.crawler import CrawlerProcess
 from helpers import (
     start_crawler,
     get_full_text,
@@ -11,44 +15,45 @@ from helpers import (
     init_database,
     search_similarity
 )
-
-st.title("Document Processing App")
+    
+st.title("Chat-with-your-docs")
 
 # Sidebar
 st.sidebar.header("Crawling Parameters")
 start_url = st.sidebar.text_input("Start URL")
-allowed_domain = st.sidebar.text_input("Allowed Domain")
 max_depth = st.sidebar.number_input("Max Depth", value=5, min_value=1)
 
 # Start crawling
 if st.sidebar.button("Start Crawling"):
     st.sidebar.text("Crawling in progress...")
-    runner = CrawlerRunner()
-    # Start the spider with the given parameters
-    runner.crawl(DocSpider, start_url = start_url, allowed_domain = allowed_domain ,max_depth=max_depth)
+        
+    api_url = "http://localhost:8000/getLinks"
+    params = {
+        "start_url": start_url,
+        "max_depth": max_depth
+    }
+    response = requests.get(api_url, params=params)
+    
     st.sidebar.text("Crawling completed!")
-
 # Summarize and split documents
 if st.button("Process Documents"):
-    get_full_text()
-    st.text("Documents processed successfully!")
-
-    st.sidebar.header("Document Splitting Parameters")
-    chunk_size = st.sidebar.number_input("Chunk Size", value=500, min_value=100)
-    chunk_overlap = st.sidebar.number_input("Chunk Overlap", value=20, min_value=0)
+    st.text("Processing documents...")
+        
+    # Make a request to FastAPI route /getText with the specified file path
+    response_text = requests.get("http://localhost:8000/getText", params={"path": "files/output_links.json"}).json()
+    st.text(response_text["status"])
 
     st.sidebar.text("Splitting documents...")
-    documents = data_loader()
-    split_documents = split_docs(documents, chunk_size, chunk_overlap)
-    st.sidebar.text("Documents split successfully!")
 
-    st.sidebar.header("Vector Database Initialization")
+    # Make a request to FastAPI route /initializeDB
+    response_init_db = requests.get("http://localhost:8000/initializeDB").json()
+    st.sidebar.text(response_init_db["status"])
 
-    init_database(split_documents)
-    st.sidebar.text("Database initialized!")
+    st.text("Documents processed successfully!")
 
 # Similarity search
 st.header("Similarity Search")
+
 query = st.text_input("Enter your query")
 openai_api_key = st.text_input("OpenAI API Key")
 

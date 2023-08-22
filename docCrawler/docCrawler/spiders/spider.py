@@ -1,17 +1,17 @@
 import scrapy
 import json
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 class DocSpider(scrapy.Spider):
     name = 'DocSpider'
     start_urls = []  # Replace with the URL you want to start crawling from
     allowed_domains = []
-    max_depth = 5
+    max_depth = 50
     
-    def __init__(self, start_url:str , allowed_domain:str, max_depth:int, *args, **kwargs):
+    def __init__(self, start_url:str , max_depth:int, *args, **kwargs):
         super(DocSpider, self).__init__(*args, **kwargs)
         self.start_urls.append(start_url)
-        self.allowed_domains.append(allowed_domain)
+        self.allowed_domains.append(start_url)
         self.max_depth = max_depth       
         
     def parse(self, response):
@@ -19,11 +19,11 @@ class DocSpider(scrapy.Spider):
         links = set()
         links.add(self.start_urls[0])
         for link in response.css('a::attr(href)').getall():
-            if 'docs' in link:
-                if link.startswith('/'):
-                    link = response.urljoin(link)
-                links.add(link)
-
+            if link.startswith('/'):
+                link = response.urljoin(link)
+            elif urlparse(link).netloc != self.allowed_domains[0]:
+                continue
+            links.add(link)
         # Save the data to JSON
         data = {response.url: list(links)}
         self.save_to_json(data)
@@ -35,5 +35,5 @@ class DocSpider(scrapy.Spider):
                 yield scrapy.Request(next_link, callback=self.parse, meta={'depth': depth + 1})
 
     def save_to_json(self, data):
-      with open('./files/output_links.json', 'w') as json_file:  # Use 'w' mode to overwrite the file
-        json.dump(data, json_file, indent=4)
+        with open('./files/output_links.json', 'w') as json_file:  # Use 'w' mode to overwrite the file
+            json.dump(data, json_file, indent=4)
