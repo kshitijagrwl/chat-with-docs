@@ -16,9 +16,9 @@ def read_root():
 
 # Route for running the web scraper and saving JSON files
 @app.get("/getLinks")
-def get_links(start_url: str, allowed_domain: str, max_depth: Optional[int] = 2):
+def get_links(start_url: str, max_depth: Optional[int] = 5):
     # Start the crawler with the given parameters
-    deferred = start_crawler(start_url, allowed_domain ,max_depth=5)
+    deferred = start_crawler(start_url ,max_depth=max_depth)
     # Run the Twisted reactor (start the crawling process)
     reactor.run()
     # Return any necessary response
