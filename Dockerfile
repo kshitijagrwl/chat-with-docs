@@ -32,6 +32,6 @@ RUN apt install sqlite3
 RUN pip install -r requirements.txt
 
 # Expose the port that the application listens on.
-EXPOSE 5637
+EXPOSE 8000
 # Run the application.
 CMD uvicorn server:app --host 0.0.0.0 --port 8000

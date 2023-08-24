@@ -23,6 +23,17 @@ st.sidebar.header("Crawling Parameters")
 start_url = st.sidebar.text_input("Start URL")
 max_depth = st.sidebar.number_input("Max Depth", value=5, min_value=1)
 
+# Similarity search
+st.header("Similarity Search")
+
+query = st.text_input("Enter your query")
+openai_api_key = st.text_input("OpenAI API Key")
+
+if st.button("Search"):
+    answer = search_similarity(query, openai_api_key)
+    st.text("Answer:")
+    st.write(answer)
+
 # Start crawling
 if st.sidebar.button("Start Crawling"):
     st.sidebar.text("Crawling in progress...")
@@ -50,14 +61,3 @@ if st.button("Process Documents"):
     st.sidebar.text(response_init_db["status"])
 
     st.text("Documents processed successfully!")
-
-# Similarity search
-st.header("Similarity Search")
-
-query = st.text_input("Enter your query")
-openai_api_key = st.text_input("OpenAI API Key")
-
-if st.button("Search"):
-    answer = search_similarity(query, openai_api_key)
-    st.text("Answer:")
-    st.write(answer)
