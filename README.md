@@ -35,52 +35,39 @@ To use Chat with Your Docs, follow these simple steps:
 
 3. **Run the Web Scraper**:
 
-   To run the web scraper and save JSON files, use the following endpoint:
+   To run the web scraper and save JSON files, use the following script:
 
    ```
-   GET /getLinks?start_url=<start_url>&allowed_domain=<allowed_domain>&max_depth=<max_depth>
+   python script.py <link to the docs>
    ```
-
-   - `start_url`: The URL to start crawling from.
-   - `allowed_domain`: The allowed domain to restrict crawling to.
-   - `max_depth` (optional): The maximum depth for crawling (default is 2).
+   Alternatively, you can also use the streamlit GUI to crawl webpages.
 
 <br>
 
-4. **Generate Full Text**:
+4. **Start Streamlit GUI**:
 
-   To generate the full text from the saved JSON files, use the following endpoint:
+   To start the GUI use the following CMD:
 
+    ```
+   streamlit run streamlit_app.py
    ```
-   GET /getText?path=<path_to_json_file>
-   ```
-
-   - `path` (optional): The path to the JSON file containing the links (default is "output_links.json").
 
 <br>
 
-5. **Initialize the Database** (We are currently using chromadb with all-MiniLM-L6-v2 embeddings):
+5. **Process Docs**:
 
-   To initialize the database with the generated full text, use the following endpoint:
+   To generate the vector DB from crawled links use the process documents button from the Streamlit GUI:
+   ![image](https://github.com/kshitijagrwl/chat-with-docs/assets/74452705/a120c669-c8d9-4556-a10d-1533a120b342)
 
-   ```
-   GET /initializeDB
-   ```
 
 <br>
 
 6. **Search the Database**:
 
-   To perform a search query on the initialized database, use the following endpoint:
+   To perform a search query on the initialized database, use search button on GUI:
 
-   ```
-   GET /search?query=<your_query>&model_name=<model_name>
-   ```
+   ![image](https://github.com/kshitijagrwl/chat-with-docs/assets/74452705/c0e39e2c-ac38-488c-a701-53db52312029)
 
-   - `query`: The search query you want to perform.
-   - `model_name` (optional): The name of the model to use for the search (default is "all-MiniLM-L6-v2").
-
-Remember to replace `<start_url>`, `<allowed_domain>`, `<max_depth>`, `<path_to_json_file>`, `<your_query>`, and `<model_name>` with appropriate values for your use case.
 
 <br>
 
@@ -89,13 +76,40 @@ Remember to replace `<start_url>`, `<allowed_domain>`, `<max_depth>`, `<path_to_
 
    Stay tuned for updates, and we will soon release instructions on how to install and run the application using Docker.
 
-## Integration with OpenAI (Coming Soon)
+## Integration with LangChain Agents (Coming Soon)
 
-We are actively working on integrating Chat with Your Docs with OpenAI, which will empower you to leverage the power of AI in your documentation queries. This integration will make your conversations even more insightful and efficient.
+We're excited to announce that we are actively working on integrating Chat with Docs with LangChain Agents, a cutting-edge technology that will take your documentation interaction to the next level. This integration will bring a new dimension of conversational AI to your document exploration.
 
-With OpenAI integration, Chat with Your Docs will use advanced natural language processing models to enhance your search results, offer context-aware answers, and better understand complex queries. The integration aims to deliver a seamless user experience and make your interactions with documentation even more productive.
+With LangChain Agents integration, Chat with Docs will be able to engage in dynamic and context-rich conversations. You'll be able to ask questions, seek clarifications, and receive comprehensive answers in a more natural and interactive manner.
 
-Stay tuned for further updates as we finalize the integration and make it available to the users. We are committed to delivering a cutting-edge solution that simplifies your documentation exploration.
+Here's a glimpse of what you can expect:
+
+- **Conversational Depth:** LangChain Agents will empower Chat with Docs to hold conversations that go beyond simple queries. You'll be able to have back-and-forths that simulate human-like interactions.
+
+- **Contextual Understanding:** The integration will enable Chat with Docs to better understand the context of your queries. It will remember previous interactions and provide more relevant responses based on the ongoing conversation.
+
+- **Real-time Adaptation:** LangChain Agents will allow Chat with Docs to adapt to changes in your questions and provide nuanced responses in real time, resulting in a more dynamic and informative experience.
+
+We're dedicated to delivering an integration that seamlessly combines the power of LangChain Agents with Chat with Docs, providing you with a sophisticated tool to explore and comprehend your documentation effortlessly.
+
+Stay tuned for updates as we finalize the integration and roll it out to users. We're committed to enhancing your documentation interaction through this exciting advancement.
+
+
+## Integration with OpenAI
+
+We have added support for OpenAI in the Chat with Docs project, allowing you to enhance your documentation queries using advanced natural language processing models (Currently using gpt-3.5-turbo). To take advantage of this feature, follow these steps:
+
+1. **Provide OpenAI Key:**
+   In the Streamlit interface, enter your OpenAI key. This is required to enable the integration with OpenAI's natural language processing models.
+
+2. **Enhanced Search Results:**
+   With OpenAI integration, Chat with Docs will use advanced natural language processing models to enhance your search results. It will offer context-aware answers and better understand complex queries.
+
+3. **Seamless User Experience:**
+   The integration aims to deliver a seamless user experience, making your interactions with documentation even more productive and insightful.
+
+Stay tuned for further updates as we finalize the integration and make it available to users. We are committed to delivering a cutting-edge solution that simplifies your documentation exploration.
+
 
 ## Contributing
 
