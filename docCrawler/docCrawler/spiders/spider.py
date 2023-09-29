@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 class DocSpider(CrawlSpider):
     name = 'DocSpider'
     allowed_domains = []
-    max_depth = 1  # Set the maximum depth to 5
+    max_depth = 1  # Set the maximum depth to 1
     links = set()
     
     def __init__(self, start_url: str, *args, **kwargs):
@@ -22,7 +22,7 @@ class DocSpider(CrawlSpider):
     def parse_item(self, response):
         new_links = set()  # Initialize the link set for the current page
         for link in LinkExtractor().extract_links(response):  # Extract links from all domains
-            if self.start_urls[0] in link.url:  # Check if the link's domain is allowed
+            if urlparse(self.start_urls[0]).netloc in link.url:  # Check if the link's domain is allowed
                 new_links.add(link.url)
         
         # Add new links to the main links set

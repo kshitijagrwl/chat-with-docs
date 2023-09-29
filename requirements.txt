@@ -1,3 +1,4 @@
+duckduckgo-search==3.8.5
 fastapi==0.99.1
 twisted==22.10.0
 aiohttp==3.8.5

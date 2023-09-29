@@ -9,13 +9,15 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import SentenceTransformerEmbeddings
-from langchain.chains.question_answering import load_qa_chain
+from langchain.agents import initialize_agent, Tool
+from langchain.agents import AgentType
+from duckduckgo_search import DDGS
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
 from twisted.internet import reactor
 from docCrawler.docCrawler.spiders.spider import DocSpider  # Replace 'your_project_name' with your actual project name
 
-def start_crawler(start_url,max_depth=5):
+def start_crawler(start_url,max_depth=1):
     """
     Start the crawler asynchronously using Twisted with given parameters.
 
@@ -139,6 +141,10 @@ def data_loader(path = './files/summary_output.json',jq_schema = '.chatwithdocs[
     data = loader.load()
     return data
 
+def split_list(input_list, chunk_size):
+    for i in range(0, len(input_list), chunk_size):
+        yield input_list[i:i + chunk_size]
+        
 def init_database(docs, model_name = "all-MiniLM-L6-v2"):
     """
     Initialize a vector database using the provided documents and model.
@@ -150,10 +156,32 @@ def init_database(docs, model_name = "all-MiniLM-L6-v2"):
     Returns:
         Chroma: The initialized text database.
     """    
-    embeddings = SentenceTransformerEmbeddings(model_name = model_name)
-    Chroma.from_documents(docs, embeddings, persist_directory="./files/chroma_db", collection_metadata={"hnsw:space": "cosine"})
-    
-def search_similarity(query,openai_api_key="your openai api key", embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"), openai_model="gpt-3.5-turbo"):
+    embedding = SentenceTransformerEmbeddings(model_name = model_name)
+    split_docs_chunked = split_list(docs, 41000)
+
+    for split_docs_chunk in split_docs_chunked:
+        vectordb = Chroma.from_documents(
+            documents=split_docs_chunk,
+            embedding=embedding,
+            persist_directory="./files/chroma_db",
+        )
+        vectordb.persist()
+
+def search(query):
+    """
+    Searches for the given query using the DuckDuckGo search engine.
+
+    Args:
+        query (str): The search query.
+
+    Returns:
+        str: The first result returned by the search engine.
+    """
+    with DDGS() as ddgs:
+        for r in ddgs.text(query):
+            return r
+
+def search_similarity(query,openai_api_key="your openai api key", embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"), openai_model="gpt-3.5-turbo-16k"):
     """
     Perform a similarity search on the text database using the given query.
 
@@ -170,33 +198,24 @@ def search_similarity(query,openai_api_key="your openai api key", embeddings = S
     
     database = Chroma(persist_directory="./files/chroma_db", embedding_function=embeddings)
     query = query.lower()
-    matching_docs = database.similarity_search(query)
-    model_name = openai_model
-    llm = ChatOpenAI(model_name=model_name,openai_api_key = openai_api_key)
-    chain = load_qa_chain(llm, chain_type="stuff",verbose=True)
-    answer =  chain.run(input_documents=matching_docs, question=query)
-    return answer
-
-def search_similarity_history(query, openai_api_key="your openai api key", embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"), openai_model="gpt-3.5-turbo"):
-    """
-    Perform a similarity search on the text database using the given query.
-
-    Parameters:
-        query (str): The query for the similarity search.
-        embeddings (SentenceTransformerEmbeddings): An instance of SentenceTransformerEmbeddings
-            with the desired model for generating text embeddings.
-        openai_api_key (str): Your OpenAI API key for using the OpenAI language model.
-        openai_model (str): The name of the OpenAI language model to use.
-
-    Returns:
-        str: The search result as an answer.
-    """
     
-    database = Chroma(persist_directory="./files/chroma_db", embedding_function=embeddings)
-    query = query.lower()
-    matching_docs = database.similarity_search(query)
+    # matching_docs = database.similarity_search(query)
+    tools = [
+    Tool(
+        name="simsearch",
+        func=database.similarity_search,
+        description="useful for when you need to search documentation for a specific topic using vector database,use the query parameter to specify the input",
+    ),
+    Tool(
+        name="search",
+        func=search,
+        description="useful for when you don't get the answer you want from the similarity search,use the query parameter to specify the input",
+    ), 
+]
     model_name = openai_model
     llm = ChatOpenAI(model_name=model_name,openai_api_key = openai_api_key)
-    chain = load_qa_chain(llm, chain_type="stuff",verbose=True)
-    answer =  chain.run(input_documents=matching_docs, question=query)
+    agent = initialize_agent(
+        tools, llm, agent=AgentType.OPENAI_MULTI_FUNCTIONS, verbose=True
+    )
+    answer =  agent.run("Imagine you are a software developer, you have to help the user with their query as best as you can. When you find multiple documents from simsearch use all of them to generate an answer yourself. Write proper descriptions for your answer and give code if necessary. Use the information from the similarity search to help answer the query. If you find any blog or article you can use webcrawl, webcrawl does not support pdf. Use all tools available to make your answer. Query: "+query)
     return answer
